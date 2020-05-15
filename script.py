@@ -1,4 +1,7 @@
 import mysql.connector
+from docxtpl import DocxTemplate
+import glob, os
+os.chdir("/home/dojo/templates")
 
 mydb = mysql.connector.connect(
   host="172.18.0.3",
@@ -132,7 +135,7 @@ verified_findings_option = input("Show Verified Findings? No(0), Yes(1): ")
 print("\n")
 print("\n")
 
-false_positive_option = input("Show Falsee Positive Findings? No(0), Yes(1): ")
+false_positive_option = input("Show False Positive Findings? No(0), Yes(1): ")
 
 print("\n")
 print("\n")
@@ -154,15 +157,43 @@ print("\n")
 print("\n")
 
 
-print("Found X templates (/templates folder), choose one")
-print("1 - XXX.docx")
-print("2 - YYY.docx")
-print("3 - ZZZ.docx")
+templates_count = 0
+for file in glob.glob("*.docx"):
+    #print(file)
+    templates_count += 1
 
+print("Found {} templates, choose one:".format(templates_count))
+#print("1 - XXX.docx")
+#print("2 - YYY.docx")
+#print("3 - ZZZ.docx")
+
+templates_count_help = 1
+for file in glob.glob("*.docx"):
+    print(templates_count_help, " - " ,file)
+    templates_count_help += 1
 print("\n")
 
-template_option = input("Select Option (1-3): ")
+template_option = input("Select Option (1-" + str(templates_count) + "): ")
 
 
 print("Generating report, please wait...")
+
+
+#sql_select_findings_query = ("SELECT title,cwe,severity,description FROM dojo_finding WHERE active = %s AND verified = %s AND false_p = %s AND test_id = %s")
+sql_select_findings_query = ("SELECT title,cwe,severity,description FROM dojo_finding WHERE active = 1 AND verified = 1 AND false_p = 0 AND test_id = 4")
+data_findings = (active_findings_option, verified_findings_option, false_positive_option, scan_option)
+#cursor.execute(sql_select_findings_query, data_findings)
+cursor.execute(sql_select_findings_query)
+#cursor.execute(sql_select_findings_query, (active_findings_option, verified_findings_option, false_positive_option, scan_option,) )
+records_findings = cursor.fetchall()
+
+for row in records_findings:
+   print(row[0], " - ",row[1]," - ",row[2]," - ",row[3])
+
+
+doc = DocxTemplate("/home/dojo/templates/template.docx")
+context = { 'engagement_option' : engagement_option }
+doc.render(context)
+doc.save("generated_doc.docx")
+
 print("Progress Bar")
